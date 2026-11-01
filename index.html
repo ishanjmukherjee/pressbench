@@ -87,7 +87,6 @@ svg text { font-family: inherit; font-size: 12px; fill: var(--soft); }
 .dot { fill: var(--ink); }
 .dot.latest { fill: var(--accent); }
 .hit { fill: transparent; cursor: pointer; }
-.best-tick { stroke: var(--ink); stroke-width: 1; }
 .value { fill: var(--ink); font-size: 13px; }
 .value.latest { fill: var(--accent-text); font-weight: bold; }
 .today { stroke: var(--accent); stroke-width: 1.5; }
@@ -277,12 +276,7 @@ function drawLift(lift, points, domain, box, tip) {
       { x: cx - w / 2, y: cy - 22 - 14 },
     ], 7, 14, bounds);
   };
-  if (best !== latest) {
-    const cx = x(best.date), cy = y(best.value);
-    el("line", { class: "best-tick", x1: cx, x2: cx, y1: cy - 5, y2: cy - 9 }, svg);
-    boxes.push({ x0: cx - 1, x1: cx + 1, y0: cy - 10, y1: cy - 4 });
-    label(best, "value");
-  }
+  if (best !== latest) label(best, "value");
   label(latest, "value latest");
 
   let prev = null;
