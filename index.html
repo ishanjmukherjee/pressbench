@@ -43,7 +43,8 @@ main { max-width: 1100px; margin: 0 auto; padding: 56px 16px 64px; }
 h1 { font-weight: 600; font-size: 34px; line-height: 1; margin: 0 0 40px; letter-spacing: -0.02em; }
 .row { position: relative; }
 .row + .row { margin-top: 36px; }
-.row h2 { font-weight: 500; font-size: 15px; line-height: 1.2; margin: 0 0 2px; letter-spacing: -0.005em; }
+.row h2 { font-weight: 500; font-size: 15px; line-height: 1.3; margin: 0 0 2px; letter-spacing: -0.005em; display: flex; flex-wrap: wrap; align-items: baseline; column-gap: 10px; }
+.row h2 .unit { font-weight: 400; font-size: 12px; color: var(--soft); letter-spacing: 0; }
 .axis-row { margin-top: 4px !important; }
 @media (max-width: 640px) {
   main { padding-top: 36px; }
@@ -53,7 +54,6 @@ h1 { font-weight: 600; font-size: 34px; line-height: 1; margin: 0 0 40px; letter
 svg { display: block; overflow: visible; }
 svg text { font-family: inherit; font-size: 11px; fill: var(--soft); }
 .month { stroke: var(--grid); stroke-width: 1; stroke-dasharray: 2 3; }
-.axis-title { font-size: 11px; fill: var(--soft); }
 .gridline { stroke: var(--grid); stroke-width: 1; }
 .target-line { stroke: var(--ink); stroke-width: 1; }
 .target-value { fill: var(--ink); font-weight: 600; }
@@ -85,11 +85,10 @@ svg text { font-family: inherit; font-size: 11px; fill: var(--soft); }
 </main>
 <script>
 const SVG_NS = "http://www.w3.org/2000/svg";
-const M = { top: 22, right: 8, bottom: 8, left: 62 };
+const M = { top: 22, right: 8, bottom: 8, left: 36 };
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-// Every gridline step gets the same height, so strips differ only in how many
-// steps their range spans.
-const STEP_PX = 28, STEP_PX_NARROW = 22, MIN_PLOT_H = 100;
+// Every plot gets the same height, whatever its range.
+const PLOT_H = 190, PLOT_H_NARROW = 150;
 
 function parseDate(s) {
   const [y, m, d] = s.split("-").map(Number);
@@ -166,7 +165,7 @@ function placeText(svg, boxes, text, cls, spots, charW, h, bounds) {
   boxes.push(spot);
 }
 
-function drawLift(lift, points, domain, box, tip, title) {
+function drawLift(lift, points, domain, box, tip) {
   box.textContent = "";
   const W = Math.max(box.clientWidth, 260);
   const [t0, t1] = domain;
@@ -180,8 +179,7 @@ function drawLift(lift, points, domain, box, tip, title) {
   const step = gridStep(hi - lo + 2 * pad, lift.target.value);
   const y0 = Math.floor((lo - pad) / step) * step, y1 = Math.ceil((hi + pad) / step) * step;
 
-  // Short ranges still get room for the rotated axis title.
-  const plotH = Math.max(Math.round((y1 - y0) / step) * (W < 480 ? STEP_PX_NARROW : STEP_PX), MIN_PLOT_H);
+  const plotH = W < 480 ? PLOT_H_NARROW : PLOT_H;
   const H = M.top + plotH + M.bottom;
   const y = v => M.top + (y1 - v) / (y1 - y0) * plotH;
 
@@ -192,10 +190,6 @@ function drawLift(lift, points, domain, box, tip, title) {
   for (let d = new Date(t0.getFullYear(), t0.getMonth(), 1, 12); d <= t1; d = new Date(d.getFullYear(), d.getMonth() + 1, 1, 12)) {
     if (d >= t0) el("line", { class: "month", x1: x(d), x2: x(d), y1: M.top, y2: M.top + plotH }, svg);
   }
-  const midY = M.top + plotH / 2;
-  title.forEach((line, i) => {
-    el("text", { class: "axis-title", x: 0, y: 0, "text-anchor": "middle", transform: `translate(${9 + 13 * i} ${midY}) rotate(-90)` }, svg).textContent = line;
-  });
 
   for (let v = Math.ceil(y0 / step) * step; v <= y1 + 1e-9; v += step) {
     if (Math.abs(v - lift.target.value) < 1e-9) continue;
@@ -320,9 +314,12 @@ async function main() {
         return { date: parseDate(s.date), weight, reps, value: impliedLoad(weight, reps, lift.reps) };
       }).sort((a, b) => a.date - b.date);
       const row = makeRow(stack);
-      row.querySelector("h2").textContent = lift.name;
-      const title = [`est. ${lift.reps}-rep load`, lift.unit];
-      return { lift, points, row, title };
+      const h2 = row.querySelector("h2");
+      const unit = document.createElement("span");
+      unit.className = "unit";
+      unit.textContent = `est. ${lift.reps}-rep load, ${lift.unit}`;
+      h2.append(lift.name, unit);
+      return { lift, points, row };
     });
     const dates = rows.flatMap(r => [parseDate(r.lift.start.date), parseDate(r.lift.target.date), ...r.points.map(p => p.date)]);
     const domain = [new Date(Math.min(...dates)), new Date(Math.max(...dates))];
@@ -330,7 +327,7 @@ async function main() {
     axisRow.querySelector("h2").remove();
 
     const draw = () => {
-      for (const r of rows) drawLift(r.lift, r.points, domain, r.row.querySelector(".plot"), r.row.querySelector(".tip"), r.title);
+      for (const r of rows) drawLift(r.lift, r.points, domain, r.row.querySelector(".plot"), r.row.querySelector(".tip"));
       drawAxis(axisRow.querySelector(".plot"), domain);
     };
     draw();
