@@ -59,7 +59,7 @@ body {
 main { max-width: 980px; margin: 0 auto; padding: 56px 16px 64px; }
 h1 { font-weight: normal; font-size: 44px; line-height: 1; margin: 0 0 40px; letter-spacing: -0.01em; }
 .row { display: grid; grid-template-columns: 170px 1fr; column-gap: 20px; position: relative; }
-.row + .row { margin-top: 18px; }
+.row + .row { margin-top: 36px; }
 .label { padding-top: 10px; }
 .label h2 { font-weight: normal; font-size: 19px; line-height: 1.2; margin: 0; }
 .label .reps { font-style: italic; color: var(--soft); font-size: 16px; }
@@ -196,8 +196,9 @@ function drawLift(lift, points, domain, box, tip) {
   const values = [lift.start.value, lift.target.value, ...points.map(p => p.value), ...points.map(p => p.weight)];
   const lo = Math.min(...values), hi = Math.max(...values);
   const pad = (hi - lo) * 0.08 || 1;
-  const y0 = lo - pad, y1 = hi + pad;
-  const step = gridStep(y1 - y0, lift.target.value);
+  // The range snaps outward to whole gridlines, so it starts and ends on one.
+  const step = gridStep(hi - lo + 2 * pad, lift.target.value);
+  const y0 = Math.floor((lo - pad) / step) * step, y1 = Math.ceil((hi + pad) / step) * step;
 
   const rise = (lift.target.value - lift.start.value) / (y1 - y0);
   const run = x(tt) - x(ts);
