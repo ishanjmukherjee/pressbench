@@ -4,92 +4,82 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Pressbench</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
 :root {
-  --paper: #f3efe6;
-  --ink: #1c1a17;
-  --soft: #8a8478;
-  --hair: #d9d3c5;
-  --accent: #b5401f;
+  --bg: #fbfbfa;
+  --card: #ffffff;
+  --text: #1d1d1b;
+  --muted: #76766f;
+  --faint: #e6e5e0;
+  --line: #9a9a92;
+  --point: #2f6fdb;
 }
 @media (prefers-color-scheme: dark) {
   :root {
-    --paper: #141311;
-    --ink: #ece6d8;
-    --soft: #8d877b;
-    --hair: #2c2a26;
-    --accent: #e8714b;
+    --bg: #161615;
+    --card: #1f1f1d;
+    --text: #ecebe6;
+    --muted: #9b9a93;
+    --faint: #2f2f2c;
+    --line: #77766f;
+    --point: #6ea0ff;
   }
 }
 * { box-sizing: border-box; }
 body {
   margin: 0;
-  background: var(--paper);
-  color: var(--ink);
-  font-family: "IBM Plex Mono", ui-monospace, Menlo, monospace;
-  -webkit-font-smoothing: antialiased;
+  background: var(--bg);
+  color: var(--text);
+  font: 15px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 }
-main { max-width: 1080px; margin: 0 auto; padding: 56px 16px 72px; }
-header { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 40px; }
-h1 { font-family: "Instrument Serif", Georgia, serif; font-weight: 400; font-size: 64px; line-height: 1; margin: 0; letter-spacing: -0.01em; }
-.day { font-size: 12px; color: var(--soft); letter-spacing: 0.04em; }
-.grid { display: grid; grid-template-columns: 1fr 1fr; column-gap: 56px; row-gap: 48px; }
-@media (max-width: 760px) {
-  .grid { grid-template-columns: 1fr; row-gap: 40px; }
-  h1 { font-size: 48px; }
-  main { padding-top: 36px; }
-}
-.lift { border-top: 1px solid var(--ink); padding-top: 10px; position: relative; }
-.lift h2 { font-family: "Instrument Serif", Georgia, serif; font-weight: 400; font-size: 28px; line-height: 1.1; margin: 0 0 14px; }
-.lift h2 em { font-size: 18px; color: var(--soft); margin-left: 6px; }
-.plot { width: 100%; }
-svg { display: block; overflow: visible; }
-svg text { font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: 11px; fill: var(--soft); }
-.axis { stroke: var(--hair); }
-.today { stroke: var(--hair); }
-.target-rule { stroke: var(--ink); stroke-width: 1; stroke-dasharray: 1 3; }
-.target-label { fill: var(--ink); font-weight: 500; }
-.path { stroke: var(--soft); stroke-width: 1; fill: none; }
-.start { fill: var(--paper); stroke: var(--ink); stroke-width: 1.25; }
-.dot { fill: var(--accent); cursor: pointer; }
-.callout { fill: var(--ink); font-weight: 500; font-size: 12px; }
-.callout-sub { font-size: 10px; }
+main { max-width: 1040px; margin: 0 auto; padding: 32px 16px 48px; }
+h1 { font-size: 22px; margin: 0 0 24px; letter-spacing: -0.01em; }
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(460px, 1fr)); gap: 16px; }
+@media (max-width: 520px) { .grid { grid-template-columns: 1fr; } }
+.card { background: var(--card); border: 1px solid var(--faint); border-radius: 10px; padding: 16px 16px 8px; position: relative; }
+h2 { font-size: 16px; margin: 0 0 10px; }
+svg { display: block; width: 100%; height: auto; overflow: visible; }
+svg text { font-size: 11px; fill: var(--muted); }
+.grid-line { stroke: var(--faint); }
+.today { stroke: var(--line); stroke-dasharray: 2 3; opacity: 0.6; }
+.goal { stroke: var(--line); stroke-width: 1.5; stroke-dasharray: 6 5; fill: none; }
+.endpoint { fill: var(--line); }
+.dot { fill: var(--point); cursor: pointer; }
+.weight-label { font-size: 10px; fill: var(--muted); opacity: 0.8; }
+.callout { font-size: 11px; font-weight: 600; fill: var(--text); }
 .tip {
-  position: absolute; pointer-events: none; background: var(--ink); color: var(--paper);
-  font-size: 11px; padding: 4px 7px; white-space: nowrap;
-  transform: translate(-50%, calc(-100% - 10px)); display: none;
+  position: absolute; pointer-events: none; background: var(--text); color: var(--bg);
+  font-size: 12px; padding: 4px 8px; border-radius: 6px; white-space: nowrap;
+  transform: translate(-50%, -130%); display: none;
 }
-.error { color: var(--accent); }
+.error { color: var(--muted); }
 </style>
 </head>
 <body>
 <main>
-  <header>
-    <h1>Pressbench</h1>
-    <span class="day" id="day"></span>
-  </header>
+  <h1>Pressbench</h1>
   <div class="grid" id="grid"></div>
 </main>
 <script>
 const SVG_NS = "http://www.w3.org/2000/svg";
-const H = 230, M = { top: 26, right: 44, bottom: 28, left: 22 };
+const W = 460, H = 220, M = { top: 14, right: 14, bottom: 26, left: 36 };
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-const DAY_MS = 86400000;
 
 function parseDate(s) {
   const [y, m, d] = s.split("-").map(Number);
   return new Date(y, m - 1, d, 12);
 }
 
-function formatDate(d) {
-  return `${MONTHS[d.getMonth()]} ${d.getDate()} '${String(d.getFullYear()).slice(2)}`;
+function yearSuffix(d) {
+  return `'${String(d.getFullYear()).slice(2)}`;
 }
 
-function fmt(x) {
-  return String(Math.round(x * 10) / 10);
+function formatDate(d) {
+  return `${MONTHS[d.getMonth()]} ${d.getDate()} ${yearSuffix(d)}`;
+}
+
+function round1(x) {
+  return Math.round(x * 10) / 10;
 }
 
 // Epley-implied load at the lift's target reps.
@@ -113,62 +103,98 @@ function el(name, attrs, parent) {
   return node;
 }
 
-function draw(lift, points, box, tip) {
-  box.textContent = "";
-  const W = Math.max(box.clientWidth, 280);
-  const t0 = parseDate(lift.start.date), tEnd = parseDate(lift.target.date);
-  const t1 = new Date(Math.max(tEnd, ...points.map(p => p.date)));
+function niceStep(span, count) {
+  const raw = span / count;
+  const mag = Math.pow(10, Math.floor(Math.log10(raw)));
+  for (const f of [1, 2, 2.5, 5, 10]) if (f * mag >= raw) return f * mag;
+  return 10 * mag;
+}
+
+// Starting from the default spacing, step down through finer nice steps
+// (5, 2.5, 2, 1 times a power of ten) until a gridline lands on the target.
+function gridStep(span, target) {
+  const base = niceStep(span, 4);
+  for (let e = Math.ceil(Math.log10(base)); e >= -3; e--) {
+    for (const f of [5, 2.5, 2, 1]) {
+      const step = f * Math.pow(10, e);
+      if (step > base * (1 + 1e-9)) continue;
+      const k = target / step;
+      if (Math.abs(k - Math.round(k)) < 1e-9) return step;
+    }
+  }
+  return base;
+}
+
+function renderLift(lift, sets, grid) {
+  const card = document.createElement("section");
+  card.className = "card";
+  card.innerHTML = `
+    <h2></h2>
+    <div class="tip"></div>`;
+  card.querySelector("h2").textContent = lift.name;
+  grid.appendChild(card);
+
+  const points = sets.map(s => {
+    const date = parseDate(s.date);
+    const weight = Number(s.weight), reps = Number(s.reps);
+    return { date, weight, reps, value: impliedLoad(weight, reps, lift.reps) };
+  }).sort((a, b) => a.date - b.date);
+
+  const t0 = parseDate(lift.start.date);
+  const t1 = new Date(Math.max(parseDate(lift.target.date), ...points.map(p => p.date)));
   const values = [lift.start.value, lift.target.value, ...points.map(p => p.value)];
-  const lo = Math.min(...values), hi = Math.max(...values);
-  const pad = (hi - lo) * 0.08 || 1;
-  const y0 = lo - 2 * pad, y1 = hi + pad;
+  const pad = (Math.max(...values) - Math.min(...values)) * 0.08 || 1;
+  const step = gridStep(Math.max(...values) - Math.min(...values) + 2 * pad, lift.target.value);
+  const y0 = Math.floor((Math.min(...values) - pad) / step) * step;
+  const y1 = Math.ceil((Math.max(...values) + pad) / step) * step;
 
   const x = d => M.left + (d - t0) / (t1 - t0) * (W - M.left - M.right);
   const y = v => H - M.bottom - (v - y0) / (y1 - y0) * (H - M.top - M.bottom);
 
-  const svg = el("svg", { width: W, height: H, viewBox: `0 0 ${W} ${H}`, role: "img", "aria-label": `${lift.name} progress` }, box);
-  const base = H - M.bottom;
-  el("line", { class: "axis", x1: M.left, x2: W - M.right, y1: base, y2: base }, svg);
+  const svg = el("svg", { viewBox: `0 0 ${W} ${H}`, role: "img", "aria-label": `${lift.name} progress` });
+  card.insertBefore(svg, card.querySelector(".tip"));
 
-  const narrow = W < 420;
-  let i = 0;
+  for (let v = y0; v <= y1 + 1e-9; v += step) {
+    el("line", { class: "grid-line", x1: M.left, x2: W - M.right, y1: y(v), y2: y(v) }, svg);
+    el("text", { x: M.left - 6, y: y(v) + 4, "text-anchor": "end" }, svg).textContent = round1(v);
+  }
   for (let d = new Date(t0.getFullYear(), t0.getMonth(), 1, 12); d <= t1; d = new Date(d.getFullYear(), d.getMonth() + 1, 1, 12)) {
     if (d < t0) continue;
-    if (!narrow || i % 2 === 0) {
-      el("line", { class: "axis", x1: x(d), x2: x(d), y1: base, y2: base + 4 }, svg);
-      el("text", { x: x(d), y: base + 17, "text-anchor": "middle" }, svg)
-        .textContent = `${MONTHS[d.getMonth()]} '${String(d.getFullYear()).slice(2)}`;
-    }
-    i++;
+    el("text", { x: x(d), y: H - 8, "text-anchor": "middle" }, svg).textContent = `${MONTHS[d.getMonth()]} ${yearSuffix(d)}`;
   }
 
   const today = new Date();
-  if (today > t0 && today < t1) {
-    el("line", { class: "today", x1: x(today), x2: x(today), y1: M.top - 8, y2: base }, svg);
+  if (today >= t0 && today <= t1) {
+    el("line", { class: "today", x1: x(today), x2: x(today), y1: M.top, y2: H - M.bottom }, svg);
   }
 
-  const ty = y(lift.target.value);
-  el("line", { class: "target-rule", x1: M.left, x2: W - M.right + 6, y1: ty, y2: ty }, svg);
-  el("text", { class: "target-label", x: W - M.right + 10, y: ty + 4 }, svg).textContent = fmt(lift.target.value);
+  const ts = parseDate(lift.target.date);
+  el("line", { class: "goal", x1: x(t0), y1: y(lift.start.value), x2: x(ts), y2: y(lift.target.value) }, svg);
+  el("circle", { class: "endpoint", cx: x(t0), cy: y(lift.start.value), r: 2.5 }, svg);
+  el("circle", { class: "endpoint", cx: x(ts), cy: y(lift.target.value), r: 2.5 }, svg);
 
-  el("line", { class: "path", x1: x(t0), y1: y(lift.start.value), x2: x(tEnd), y2: ty }, svg);
-
-  // The start counts as the first datapoint when picking which points to label.
-  const series = [{ date: t0, value: lift.start.value, start: true }, ...points];
-  const latest = series[series.length - 1];
-  const best = series.reduce((a, b) => (b.value >= a.value ? b : a));
-  const labeled = best === latest ? [latest] : [best, latest];
-
-  el("circle", { class: "start", cx: x(t0), cy: y(lift.start.value), r: 3.5 }, svg);
-
+  const tip = card.querySelector(".tip");
+  // Keep labels clear of the y-axis numbers.
+  const boxes = [{ x0: 0, x1: M.left - 2, y0: 0, y1: H }];
+  let prevWeight = null;
   for (const p of points) {
     const cx = x(p.date), cy = y(p.value);
-    const dot = el("circle", { class: "dot", cx, cy, r: 3 }, svg);
-    const text = `${formatDate(p.date)}  ${p.weight} x ${p.reps}  ->  ${fmt(p.value)}`;
+    // Label the actual weight only where it changes, so the labels stay sparse.
+    if (p.weight !== prevWeight) {
+      el("text", { class: "weight-label", x: cx, y: cy - 8, "text-anchor": "middle" }, svg).textContent = p.weight;
+      const w = String(p.weight).length * 6;
+      boxes.push({ x0: cx - w / 2, x1: cx + w / 2, y0: cy - 17, y1: cy - 6 });
+      prevWeight = p.weight;
+    }
+    boxes.push({ x0: cx - 4, x1: cx + 4, y0: cy - 4, y1: cy + 4 });
+    const dot = el("circle", { class: "dot", cx, cy, r: 3.5 }, svg);
+    const label = `${formatDate(p.date)}: ${p.weight} x ${p.reps} = ${round1(p.value)} at ${lift.reps}`;
+    el("title", {}, dot).textContent = label;
     const show = () => {
-      tip.textContent = text;
-      tip.style.left = `${box.offsetLeft + cx}px`;
-      tip.style.top = `${box.offsetTop + cy}px`;
+      const box = svg.getBoundingClientRect(), cardBox = card.getBoundingClientRect();
+      tip.textContent = label;
+      tip.style.left = `${box.left - cardBox.left + cx / W * box.width}px`;
+      tip.style.top = `${box.top - cardBox.top + cy / H * box.height}px`;
       tip.style.display = "block";
     };
     dot.addEventListener("pointerenter", show);
@@ -176,51 +202,30 @@ function draw(lift, points, box, tip) {
     dot.addEventListener("pointerleave", () => { tip.style.display = "none"; });
   }
 
-  // Each label tries above its point, then right, then below, then a few fallbacks,
-  // and takes the first spot that stays clear of earlier labels and the axis.
-  const placed = [];
+  // Label the latest and the best implied load so far, counting the start as
+  // the first point. Each label takes the first spot clear of other text.
+  const series = [{ date: t0, value: lift.start.value }, ...points];
+  const latest = series[series.length - 1];
+  const best = series.reduce((a, b) => (b.value >= a.value ? b : a));
   const overlaps = (a, b) => a.x0 < b.x1 && b.x0 < a.x1 && a.y0 < b.y1 && b.y0 < a.y1;
-  for (const p of labeled) {
-    const cx = x(p.date), cy = y(p.value);
-    const main = fmt(p.value), sub = p.start ? "" : `${p.weight}x${p.reps}`;
-    const w = Math.max(main.length * 7.4, sub.length * 6.2), h = sub ? 24 : 13;
+  for (const p of best === latest ? [latest] : [best, latest]) {
+    const cx = x(p.date), cy = y(p.value), text = String(round1(p.value));
+    const w = text.length * 7, h = 11;
     const spots = [
       { x: cx - w / 2, y: cy - 8 - h },
-      { x: cx + 9, y: cy - h / 2 },
-      { x: cx - w / 2, y: cy + 9 },
-      { x: cx + 9, y: cy + 4 },
-      { x: cx - w / 2, y: cy - 8 - h - 28 },
-    ].map(s => ({ ...s, x: Math.min(Math.max(s.x, 0), W - M.right - w) }));
-    const fits = s => s.y > 0 && s.y + h < base - 2 &&
-      !placed.some(b => overlaps(b, { x0: s.x, x1: s.x + w, y0: s.y, y1: s.y + h }));
-    const spot = spots.find(fits) || spots[0];
-    el("text", { class: "callout", x: spot.x, y: spot.y + 10 }, svg).textContent = main;
-    if (sub) el("text", { class: "callout-sub", x: spot.x, y: spot.y + 22 }, svg).textContent = sub;
-    placed.push({ x0: spot.x - 2, x1: spot.x + w + 2, y0: spot.y - 2, y1: spot.y + h + 2 });
-    placed.push({ x0: cx - 4, x1: cx + 4, y0: cy - 4, y1: cy + 4 });
+      { x: cx - w / 2, y: cy - 19 - h },
+      { x: cx + 7, y: cy - h / 2 },
+      { x: cx - w / 2, y: cy + 7 },
+      { x: cx - w / 2, y: cy - 30 - h },
+      { x: cx + 7, y: cy - 8 - h },
+    ].map(b => ({ ...b, x: Math.max(b.x, M.left) }))
+      .map(b => ({ x0: b.x, x1: b.x + w, y0: b.y, y1: b.y + h }))
+      .filter(b => b.x0 >= 0 && b.x1 <= W && b.y0 >= 0 && b.y1 <= H - M.bottom);
+    const spot = spots.find(b => !boxes.some(o => overlaps(o, b))) || spots[0];
+    if (!spot) continue;
+    el("text", { class: "callout", x: spot.x0, y: spot.y1 - 1 }, svg).textContent = text;
+    boxes.push(spot);
   }
-}
-
-function renderLift(lift, sets, grid) {
-  const section = document.createElement("section");
-  section.className = "lift";
-  section.innerHTML = `<h2></h2><div class="plot"></div><div class="tip"></div>`;
-  const h2 = section.querySelector("h2");
-  h2.textContent = lift.name;
-  const reps = document.createElement("em");
-  reps.textContent = `x${lift.reps}`;
-  h2.appendChild(reps);
-  grid.appendChild(section);
-
-  const points = sets.map(s => {
-    const weight = Number(s.weight), reps = Number(s.reps);
-    return { date: parseDate(s.date), weight, reps, value: impliedLoad(weight, reps, lift.reps) };
-  }).sort((a, b) => a.date - b.date);
-
-  const box = section.querySelector(".plot"), tip = section.querySelector(".tip");
-  const redraw = () => draw(lift, points, box, tip);
-  redraw();
-  new ResizeObserver(redraw).observe(box);
 }
 
 async function main() {
@@ -232,12 +237,6 @@ async function main() {
     ]);
     const sets = parseCsv(csv);
     for (const lift of lifts) renderLift(lift, sets.filter(s => s.lift === lift.id), grid);
-    if (lifts.length) {
-      const start = parseDate(lifts[0].start.date), end = parseDate(lifts[0].target.date);
-      const total = Math.round((end - start) / DAY_MS);
-      const day = Math.floor((new Date() - start) / DAY_MS) + 1;
-      if (day >= 1 && day <= total) document.getElementById("day").textContent = `day ${day} / ${total}`;
-    }
   } catch (err) {
     grid.innerHTML = `<p class="error">Could not load data.</p>`;
     console.error(err);
