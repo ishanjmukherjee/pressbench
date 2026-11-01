@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>PressBench</title>
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -40,7 +40,14 @@ body {
   font-variant-numeric: tabular-nums;
   -webkit-font-smoothing: antialiased;
 }
-main { max-width: 1100px; margin: 0 auto; padding: 56px 16px 64px; }
+main {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding-top: calc(56px + env(safe-area-inset-top, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-bottom: calc(64px + env(safe-area-inset-bottom, 0px));
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+}
 header { display: flex; justify-content: space-between; align-items: center; margin: 0 0 40px; }
 h1 { font-weight: 600; font-size: 34px; line-height: 1; margin: 0; letter-spacing: -0.02em; }
 .links { display: flex; gap: 14px; align-items: center; }
@@ -54,7 +61,7 @@ h1 { font-weight: 600; font-size: 34px; line-height: 1; margin: 0; letter-spacin
 .row h2 .unit { display: block; font-weight: 400; font-size: 14px; color: var(--soft); letter-spacing: 0; margin-top: 2px; }
 .axis-row { margin-top: 4px !important; }
 @media (max-width: 640px) {
-  main { padding-top: 36px; }
+  main { padding-top: calc(36px + env(safe-area-inset-top, 0px)); }
   header { margin-bottom: 28px; }
   h1 { font-size: 28px; }
   .row + .row { margin-top: 28px; }
