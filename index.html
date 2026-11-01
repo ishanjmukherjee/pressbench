@@ -66,16 +66,10 @@ svg text { font-family: inherit; font-size: 11px; fill: var(--soft); }
 .step-label { font-size: 10px; fill: var(--soft); }
 .dot { fill: var(--ink); }
 .dot.latest { fill: var(--accent); }
-.hit { fill: transparent; cursor: pointer; }
 .value { fill: var(--ink); font-size: 12px; font-weight: 500; }
 .value.latest { fill: var(--accent-text); font-weight: 600; }
 .today { stroke: var(--accent); stroke-width: 1.5; }
 .axis-tick { stroke: var(--faint); }
-.tip {
-  position: absolute; pointer-events: none; background: var(--ink); color: var(--paper);
-  font-size: 12px; padding: 3px 8px; white-space: nowrap; display: none;
-  transform: translate(-50%, calc(-100% - 10px));
-}
 .error { color: var(--soft); }
 </style>
 </head>
@@ -98,10 +92,6 @@ function parseDate(s) {
 
 function yearSuffix(d) {
   return `'${String(d.getFullYear()).slice(2)}`;
-}
-
-function longDate(d) {
-  return `${MONTHS[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}`;
 }
 
 function fmt(x) {
@@ -166,7 +156,7 @@ function placeText(svg, boxes, text, cls, spots, charW, h, bounds) {
   boxes.push(spot);
 }
 
-function drawLift(lift, points, domain, box, tip) {
+function drawLift(lift, points, domain, box) {
   box.textContent = "";
   const W = Math.max(box.clientWidth, 260);
   const [t0, t1] = domain;
@@ -234,20 +224,6 @@ function drawLift(lift, points, domain, box, tip) {
   for (const p of points) {
     const cx = x(p.date), cy = y(p.value);
     el("circle", { class: "dot" + (p === latest ? " latest" : ""), cx, cy, r: p === latest ? 3.5 : 2.5 }, svg);
-    const hit = el("circle", { class: "hit", cx, cy, r: 9 }, svg);
-    const text = [longDate(p.date), `${p.weight} \u00d7 ${p.reps}`, fmt(p.value)].join(" \u00b7 ");
-    const show = () => {
-      tip.textContent = text;
-      tip.style.display = "block";
-      // Keep the tooltip inside the row near either edge of the plot.
-      const half = tip.offsetWidth / 2, rowW = box.parentElement.clientWidth;
-      const left = Math.min(Math.max(box.offsetLeft + cx, half), rowW - half);
-      tip.style.left = `${left}px`;
-      tip.style.top = `${box.offsetTop + cy}px`;
-    };
-    hit.addEventListener("pointerenter", show);
-    hit.addEventListener("click", show);
-    hit.addEventListener("pointerleave", () => { tip.style.display = "none"; });
   }
 
   const bounds = { x0: M.left, x1: right, y0: 0, y1: H };
@@ -299,7 +275,7 @@ function drawAxis(box, domain) {
 function makeRow(stack, cls) {
   const row = document.createElement("section");
   row.className = "row" + (cls ? " " + cls : "");
-  row.innerHTML = `<h2></h2><div class="plot"></div><div class="tip"></div>`;
+  row.innerHTML = `<h2></h2><div class="plot"></div>`;
   stack.appendChild(row);
   return row;
 }
@@ -331,7 +307,7 @@ async function main() {
     axisRow.querySelector("h2").remove();
 
     const draw = () => {
-      for (const r of rows) drawLift(r.lift, r.points, domain, r.row.querySelector(".plot"), r.row.querySelector(".tip"));
+      for (const r of rows) drawLift(r.lift, r.points, domain, r.row.querySelector(".plot"));
       drawAxis(axisRow.querySelector(".plot"), domain);
     };
     draw();

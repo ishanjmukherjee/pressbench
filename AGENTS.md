@@ -1,3 +1,116 @@
+# Logging sets
+
+The user reports sets in short, informal messages ("curls 12", "10 AMRAP
+decline pushups", "lat raises 10 lbs per hand, 5 reps"), often late at night.
+For each set: append a row to the Workout Log sheet, and if it is the first set
+of that lift on that workout day, also add it to `data/sets.csv`, commit, and
+push to `main`. The defaults below fill in missing details; ask for
+clarification only when they do not cover something.
+
+## Interpreting a report
+
+- Every set is to failure unless the user says otherwise. Do not ask about RPE
+  or effort.
+- A bare number, or one in parentheses, is reps, not sets.
+- Weight: if none is named, use the last logged weight for that exercise.
+- Exercise: if only a muscle group is named ("triceps, 10 per arm"), use the
+  exercise most recently logged for that group.
+- Weights the user names for dumbbell lifts are plates per hand. The dumbbell
+  bar weighs 5 lb, so the real weight is plates + 5.
+- Push-up weights are reported as one total, body plus bag. Use it as given.
+- If the arms differ ("22 right / 25 left"), the weaker arm's reps count for the
+  plot.
+- If the user corrects an earlier set ("sorry, that was 22.5"), fix that sheet
+  row in place, and the matching `data/sets.csv` row if there is one.
+
+## Exercises
+
+| Sheet name | Lift id | Muscle group | Target reps |
+| --- | --- | --- | --- |
+| Bicep curls | `bicep-curls` | biceps | 10 |
+| Lateral raises | `lateral-raises` | shoulders, delts | 10 |
+| Overhead tricep extensions | `overhead-tricep-extensions` | triceps | 10 |
+| Wrist curl ins | `wrist-curl-ins` | forearms | 20 |
+| Reverse curls | `reverse-curls` | forearms, brachioradialis | 10 |
+| Weighted pushups (decline or flat) | `pushups` | chest | 10 |
+
+Reverse curls replace wrist curl outs. Pushups default to the variation last
+logged.
+
+## Time and workout day
+
+- Get the current time with `TZ=America/Chicago date '+%b %-d, %Y %-I:%M %p'`.
+  The user is in Central time.
+- A set reported before 6:00 AM belongs to the previous calendar day. Use that
+  day in the sheet's Date column and in `data/sets.csv`, and note the real time.
+
+## Sheet row
+
+Sheet: https://docs.google.com/spreadsheets/d/1vbwOJGCh1Xv6aR7FNua1aPG77t7kODYGgVRWAD7KpI8,
+tab `Workout Log`. Append one row per set through the Google Sheets connector:
+
+| Column | Content | Example |
+| --- | --- | --- |
+| Date | workout day | `Nov 13, 2026` |
+| Exercise | sheet name from the table above | `Bicep curls` |
+| Sets | always `1` | `1` |
+| Reps | per arm, or both arms when they differ | `12 reps each arm`, `22 reps right / 25 reps left` |
+| Notes | time, weight as reported (plates) and whether it was defaulted, to failure | `~10:18 PM CT; 25 lb (last logged weight); to failure` |
+| Set debt balance | running balance, see below | `17` |
+
+## Set debt balance
+
+There is a daily quota of 3 sets. The balance counts sets owed, not counting
+today's quota. To compute it for a new row:
+
+1. Start from the most recent non-blank balance in the sheet.
+2. For each workout day after that row's day and before today, and for that
+   row's own day if today is later, add 3 minus the sets logged that day (never
+   less than 0).
+3. If this set is beyond the third set logged today, subtract 1.
+
+State the new balance in the reply. Otherwise keep replies minimal: no
+congratulations and no commentary on the hour; the user says when they are done
+for the day.
+
+## Plot data
+
+Only the first set of each lift on each workout day goes on the plot, because
+the first set, done fresh, is the proxy for strength. Append it to
+`data/sets.csv` as `date,lift,weight,reps`:
+
+- `date` is the workout day as `YYYY-MM-DD`.
+- `lift` is the lift id from the table above.
+- `weight` is the real weight: plates + 5 for dumbbell lifts, the reported total
+  for pushups. For a decline pushup set, multiply the total by 0.70 / 0.64 and
+  round to 0.1, which converts it to its flat equivalent.
+- `reps` is the weaker arm's reps.
+
+Commit only `data/sets.csv` with a subject like `Log bicep curls 30 x 12` and
+push to `main`.
+
+## Lifts without a plot yet
+
+`data/lifts.json` defines the plotted lifts. Two lifts are not in it yet:
+
+- Reverse curls: still log first sets to `data/sets.csv`. They are not plotted
+  until the user sets a target. After logging, remind the user that the reverse
+  curls plot needs a target.
+- Pushups: on the first logged weighted pushup set, add this entry to
+  `data/lifts.json`, with `start` set to that day and to the set's Epley value,
+  `weight * (30 + reps) / 40`, rounded to 0.1:
+
+  ```json
+  {
+    "id": "pushups",
+    "name": "Pushups",
+    "unit": "lb",
+    "reps": 10,
+    "start": { "date": "YYYY-MM-DD", "value": 0 },
+    "target": { "date": "2027-05-01", "value": 225 }
+  }
+  ```
+
 # User preferences
 
 ## No attribution to coding agent
