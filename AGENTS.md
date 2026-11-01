@@ -3,8 +3,13 @@
 Pressbench logs the user's strength as a proxy for aesthetics. It will be a
 static site served at https://ishanjmukherjee.github.io/pressbench with a few
 simple plots: for each lift, a linear line from a starting point to a target
-N months out, with the real datapoints plotted alongside. Targets are for 10
-reps to failure (20 for wrist curls).
+N months out, with the real datapoints plotted alongside.
+
+All lifts are weighted; there are no bodyweight lifts. The y-axis is the
+Epley-implied load at the lift's target reps: 20 for wrist curl ins, 10 for
+everything else. For a set of `r` reps at load `w`, that is
+`w * (30 + r) / 40` at 10 reps, or `w * (30 + r) / 50` at 20 reps. Each point
+also marks the actual weight lifted, unobtrusively.
 
 The user reports sets in agent sessions. Each set goes in the Workout Log
 Google Sheet
