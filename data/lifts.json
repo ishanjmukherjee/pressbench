@@ -1,0 +1,34 @@
+[
+  {
+    "id": "bicep-curls",
+    "name": "Bicep curls",
+    "unit": "lb per arm",
+    "reps": 10,
+    "start": { "date": "2026-11-01", "value": 28.2 },
+    "target": { "date": "2027-05-01", "value": 42.5 }
+  },
+  {
+    "id": "lateral-raises",
+    "name": "Lateral raises",
+    "unit": "lb per arm",
+    "reps": 10,
+    "start": { "date": "2026-11-01", "value": 17.1 },
+    "target": { "date": "2027-05-01", "value": 25 }
+  },
+  {
+    "id": "overhead-tricep-extensions",
+    "name": "Overhead tricep extensions",
+    "unit": "lb per arm",
+    "reps": 10,
+    "start": { "date": "2026-11-01", "value": 19.3 },
+    "target": { "date": "2027-05-01", "value": 30 }
+  },
+  {
+    "id": "wrist-curl-ins",
+    "name": "Wrist curl ins",
+    "unit": "lb per arm",
+    "reps": 20,
+    "start": { "date": "2026-11-01", "value": 31.2 },
+    "target": { "date": "2027-05-01", "value": 40 }
+  }
+]

@@ -1,0 +1,233 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pressbench</title>
+<style>
+:root {
+  --bg: #fbfbfa;
+  --card: #ffffff;
+  --text: #1d1d1b;
+  --muted: #76766f;
+  --faint: #e6e5e0;
+  --line: #9a9a92;
+  --point: #2f6fdb;
+  --ahead: #2e8a57;
+  --behind: #c2513a;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #161615;
+    --card: #1f1f1d;
+    --text: #ecebe6;
+    --muted: #9b9a93;
+    --faint: #2f2f2c;
+    --line: #77766f;
+    --point: #6ea0ff;
+    --ahead: #5cc18a;
+    --behind: #ef8a72;
+  }
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font: 15px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+main { max-width: 1040px; margin: 0 auto; padding: 32px 16px 48px; }
+h1 { font-size: 22px; margin: 0 0 24px; letter-spacing: -0.01em; }
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(460px, 1fr)); gap: 16px; }
+@media (max-width: 520px) { .grid { grid-template-columns: 1fr; } }
+.card { background: var(--card); border: 1px solid var(--faint); border-radius: 10px; padding: 16px 16px 8px; position: relative; }
+.head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+h2 { font-size: 16px; margin: 0; }
+.target { color: var(--muted); font-size: 13px; }
+.status { font-size: 13px; color: var(--muted); margin: 4px 0 6px; min-height: 19px; }
+.status b { font-weight: 600; }
+.ahead { color: var(--ahead); }
+.behind { color: var(--behind); }
+svg { display: block; width: 100%; height: auto; overflow: visible; }
+svg text { font-size: 11px; fill: var(--muted); }
+.grid-line { stroke: var(--faint); }
+.today { stroke: var(--line); stroke-dasharray: 2 3; opacity: 0.6; }
+.goal { stroke: var(--line); stroke-width: 1.5; stroke-dasharray: 6 5; fill: none; }
+.endpoint { fill: var(--line); }
+.dot { fill: var(--point); cursor: pointer; }
+.weight-label { font-size: 10px; fill: var(--muted); opacity: 0.8; }
+.tip {
+  position: absolute; pointer-events: none; background: var(--text); color: var(--bg);
+  font-size: 12px; padding: 4px 8px; border-radius: 6px; white-space: nowrap;
+  transform: translate(-50%, -130%); display: none;
+}
+.error { color: var(--behind); }
+</style>
+</head>
+<body>
+<main>
+  <h1>Pressbench</h1>
+  <div class="grid" id="grid"></div>
+</main>
+<script>
+const SVG_NS = "http://www.w3.org/2000/svg";
+const W = 460, H = 220, M = { top: 14, right: 14, bottom: 26, left: 36 };
+const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+function parseDate(s) {
+  const [y, m, d] = s.split("-").map(Number);
+  return new Date(y, m - 1, d, 12);
+}
+
+function formatDate(d, withYear) {
+  return `${MONTHS[d.getMonth()]} ${d.getDate()}` + (withYear ? `, ${d.getFullYear()}` : "");
+}
+
+function round1(x) {
+  return Math.round(x * 10) / 10;
+}
+
+// Epley-implied load at the lift's target reps.
+function impliedLoad(weight, reps, targetReps) {
+  return weight * (30 + reps) / (30 + targetReps);
+}
+
+function parseCsv(text) {
+  const lines = text.trim().split(/\r?\n/);
+  const header = lines.shift().split(",").map(s => s.trim());
+  return lines.filter(l => l.trim()).map(line => {
+    const cells = line.split(",").map(s => s.trim());
+    return Object.fromEntries(header.map((h, i) => [h, cells[i]]));
+  });
+}
+
+function el(name, attrs, parent) {
+  const node = document.createElementNS(SVG_NS, name);
+  for (const [k, v] of Object.entries(attrs || {})) node.setAttribute(k, v);
+  if (parent) parent.appendChild(node);
+  return node;
+}
+
+function niceStep(span, count) {
+  const raw = span / count;
+  const mag = Math.pow(10, Math.floor(Math.log10(raw)));
+  for (const f of [1, 2, 2.5, 5, 10]) if (f * mag >= raw) return f * mag;
+  return 10 * mag;
+}
+
+function goalAt(lift, date) {
+  const t0 = parseDate(lift.start.date), t1 = parseDate(lift.target.date);
+  const f = (date - t0) / (t1 - t0);
+  return lift.start.value + f * (lift.target.value - lift.start.value);
+}
+
+function renderLift(lift, sets, grid) {
+  const card = document.createElement("section");
+  card.className = "card";
+  card.innerHTML = `
+    <div class="head">
+      <h2></h2>
+      <span class="target"></span>
+    </div>
+    <div class="status"></div>
+    <div class="tip"></div>`;
+  card.querySelector("h2").textContent = lift.name;
+  card.querySelector(".target").textContent =
+    `${lift.target.value} ${lift.unit} x${lift.reps} by ${formatDate(parseDate(lift.target.date), true)}`;
+  grid.appendChild(card);
+
+  const points = sets.map(s => {
+    const date = parseDate(s.date);
+    const weight = Number(s.weight), reps = Number(s.reps);
+    return { date, weight, reps, value: impliedLoad(weight, reps, lift.reps) };
+  }).sort((a, b) => a.date - b.date);
+
+  const status = card.querySelector(".status");
+  if (points.length) {
+    const last = points[points.length - 1];
+    const diff = last.value - goalAt(lift, last.date);
+    const cls = diff >= 0 ? "ahead" : "behind";
+    const sign = diff >= 0 ? "+" : "-";
+    status.innerHTML = `Latest <b></b> on ${formatDate(last.date)}, <span class="${cls}">${sign}${Math.abs(round1(diff))} vs line</span>`;
+    status.querySelector("b").textContent = `${round1(last.value)} ${lift.unit}`;
+  } else {
+    status.textContent = `Starts at ${lift.start.value} ${lift.unit}`;
+  }
+
+  const t0 = parseDate(lift.start.date);
+  const t1 = new Date(Math.max(parseDate(lift.target.date), ...points.map(p => p.date)));
+  const values = [lift.start.value, lift.target.value, ...points.map(p => p.value)];
+  const pad = (Math.max(...values) - Math.min(...values)) * 0.08 || 1;
+  const step = niceStep(Math.max(...values) - Math.min(...values) + 2 * pad, 4);
+  const y0 = Math.floor((Math.min(...values) - pad) / step) * step;
+  const y1 = Math.ceil((Math.max(...values) + pad) / step) * step;
+
+  const x = d => M.left + (d - t0) / (t1 - t0) * (W - M.left - M.right);
+  const y = v => H - M.bottom - (v - y0) / (y1 - y0) * (H - M.top - M.bottom);
+
+  const svg = el("svg", { viewBox: `0 0 ${W} ${H}`, role: "img", "aria-label": `${lift.name} progress` });
+  card.insertBefore(svg, card.querySelector(".tip"));
+
+  for (let v = y0; v <= y1 + 1e-9; v += step) {
+    el("line", { class: "grid-line", x1: M.left, x2: W - M.right, y1: y(v), y2: y(v) }, svg);
+    el("text", { x: M.left - 6, y: y(v) + 4, "text-anchor": "end" }, svg).textContent = round1(v);
+  }
+  for (let d = new Date(t0.getFullYear(), t0.getMonth(), 1, 12); d <= t1; d = new Date(d.getFullYear(), d.getMonth() + 1, 1, 12)) {
+    if (d < t0) continue;
+    el("text", { x: x(d), y: H - 8, "text-anchor": "middle" }, svg).textContent = MONTHS[d.getMonth()];
+  }
+
+  const today = new Date();
+  if (today >= t0 && today <= t1) {
+    el("line", { class: "today", x1: x(today), x2: x(today), y1: M.top, y2: H - M.bottom }, svg);
+  }
+
+  const ts = parseDate(lift.target.date);
+  el("line", { class: "goal", x1: x(t0), y1: y(lift.start.value), x2: x(ts), y2: y(lift.target.value) }, svg);
+  el("circle", { class: "endpoint", cx: x(t0), cy: y(lift.start.value), r: 2.5 }, svg);
+  el("circle", { class: "endpoint", cx: x(ts), cy: y(lift.target.value), r: 2.5 }, svg);
+
+  const tip = card.querySelector(".tip");
+  let prevWeight = null;
+  for (const p of points) {
+    const cx = x(p.date), cy = y(p.value);
+    // Label the actual weight only where it changes, so the labels stay sparse.
+    if (p.weight !== prevWeight) {
+      el("text", { class: "weight-label", x: cx, y: cy - 8, "text-anchor": "middle" }, svg).textContent = p.weight;
+      prevWeight = p.weight;
+    }
+    const dot = el("circle", { class: "dot", cx, cy, r: 3.5 }, svg);
+    const label = `${formatDate(p.date)}: ${p.weight} x ${p.reps} = ${round1(p.value)} at ${lift.reps}`;
+    el("title", {}, dot).textContent = label;
+    const show = () => {
+      const box = svg.getBoundingClientRect(), cardBox = card.getBoundingClientRect();
+      tip.textContent = label;
+      tip.style.left = `${box.left - cardBox.left + cx / W * box.width}px`;
+      tip.style.top = `${box.top - cardBox.top + cy / H * box.height}px`;
+      tip.style.display = "block";
+    };
+    dot.addEventListener("pointerenter", show);
+    dot.addEventListener("click", show);
+    dot.addEventListener("pointerleave", () => { tip.style.display = "none"; });
+  }
+}
+
+async function main() {
+  const grid = document.getElementById("grid");
+  try {
+    const [lifts, csv] = await Promise.all([
+      fetch("data/lifts.json", { cache: "no-cache" }).then(r => r.json()),
+      fetch("data/sets.csv", { cache: "no-cache" }).then(r => r.text()),
+    ]);
+    const sets = parseCsv(csv);
+    for (const lift of lifts) renderLift(lift, sets.filter(s => s.lift === lift.id), grid);
+  } catch (err) {
+    grid.innerHTML = `<p class="error">Could not load data.</p>`;
+    console.error(err);
+  }
+}
+
+main();
+</script>
+</body>
+</html>
