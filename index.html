@@ -56,7 +56,8 @@ svg text { font-family: inherit; font-size: 11px; fill: var(--soft); }
 .month { stroke: var(--grid); stroke-width: 1; stroke-dasharray: 2 3; }
 .gridline { stroke: var(--grid); stroke-width: 1; }
 .target-line { stroke: var(--ink); stroke-width: 1; }
-.target-value { fill: var(--ink); font-weight: 600; }
+.y-tick { font-size: 13px; }
+.target-value { fill: var(--ink); font-weight: 600; font-size: 13px; }
 .plan { stroke: var(--faint); stroke-width: 1; fill: none; }
 .target-dot { fill: var(--ink); }
 .start { fill: var(--paper); stroke: var(--ink); stroke-width: 1.2; }
@@ -85,7 +86,7 @@ svg text { font-family: inherit; font-size: 11px; fill: var(--soft); }
 </main>
 <script>
 const SVG_NS = "http://www.w3.org/2000/svg";
-const M = { top: 22, right: 8, bottom: 8, left: 36 };
+const M = { top: 22, right: 8, bottom: 8, left: 42 };
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 // Every plot gets the same height, whatever its range.
 const PLOT_H = 190, PLOT_H_NARROW = 150;
@@ -99,8 +100,8 @@ function yearSuffix(d) {
   return `'${String(d.getFullYear()).slice(2)}`;
 }
 
-function formatDate(d) {
-  return `${MONTHS[d.getMonth()]} ${d.getDate()} ${yearSuffix(d)}`;
+function longDate(d) {
+  return `${MONTHS[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}`;
 }
 
 function fmt(x) {
@@ -194,11 +195,11 @@ function drawLift(lift, points, domain, box, tip) {
   for (let v = Math.ceil(y0 / step) * step; v <= y1 + 1e-9; v += step) {
     if (Math.abs(v - lift.target.value) < 1e-9) continue;
     el("line", { class: "gridline", x1: M.left, x2: right, y1: y(v), y2: y(v) }, svg);
-    el("text", { x: M.left - 8, y: y(v) + 4, "text-anchor": "end" }, svg).textContent = fmt(v);
+    el("text", { class: "y-tick", x: M.left - 8, y: y(v) + 4.5, "text-anchor": "end" }, svg).textContent = fmt(v);
   }
   const ty = y(lift.target.value);
   el("line", { class: "target-line", x1: M.left, x2: right, y1: ty, y2: ty }, svg);
-  el("text", { class: "target-value", x: M.left - 8, y: ty + 4, "text-anchor": "end" }, svg).textContent = fmt(lift.target.value);
+  el("text", { class: "target-value", x: M.left - 8, y: ty + 4.5, "text-anchor": "end" }, svg).textContent = fmt(lift.target.value);
 
   el("line", { class: "plan", x1: x(ts), y1: y(lift.start.value), x2: x(tt), y2: ty }, svg);
   el("circle", { class: "target-dot", cx: x(tt), cy: ty, r: 2.2 }, svg);
@@ -234,12 +235,15 @@ function drawLift(lift, points, domain, box, tip) {
     const cx = x(p.date), cy = y(p.value);
     el("circle", { class: "dot" + (p === latest ? " latest" : ""), cx, cy, r: p === latest ? 3.5 : 2.5 }, svg);
     const hit = el("circle", { class: "hit", cx, cy, r: 9 }, svg);
-    const text = `${formatDate(p.date)}   ${p.weight} x ${p.reps}   -> ${fmt(p.value)}`;
+    const text = [longDate(p.date), `${p.weight} \u00d7 ${p.reps}`, fmt(p.value)].join(" \u00b7 ");
     const show = () => {
       tip.textContent = text;
-      tip.style.left = `${box.offsetLeft + cx}px`;
-      tip.style.top = `${box.offsetTop + cy}px`;
       tip.style.display = "block";
+      // Keep the tooltip inside the row near either edge of the plot.
+      const half = tip.offsetWidth / 2, rowW = box.parentElement.clientWidth;
+      const left = Math.min(Math.max(box.offsetLeft + cx, half), rowW - half);
+      tip.style.left = `${left}px`;
+      tip.style.top = `${box.offsetTop + cy}px`;
     };
     hit.addEventListener("pointerenter", show);
     hit.addEventListener("click", show);
