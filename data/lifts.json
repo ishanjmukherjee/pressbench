@@ -30,5 +30,13 @@
     "reps": 20,
     "start": { "date": "2026-11-01", "value": 31.2 },
     "target": { "date": "2027-05-01", "value": 40 }
+  },
+  {
+    "id": "reverse-curls",
+    "name": "Reverse curls",
+    "unit": "lb per arm",
+    "reps": 10,
+    "start": { "date": "2026-11-01", "value": 21.9 },
+    "target": { "date": "2027-05-01", "value": 27.5 }
   }
 ]

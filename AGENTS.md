@@ -91,11 +91,8 @@ push to `main`.
 
 ## Lifts without a plot yet
 
-`data/lifts.json` defines the plotted lifts. Two lifts are not in it yet:
+`data/lifts.json` defines the plotted lifts. Pushups are not in it yet:
 
-- Reverse curls: still log first sets to `data/sets.csv`. They are not plotted
-  until the user sets a target. After logging, remind the user that the reverse
-  curls plot needs a target.
 - Pushups: on the first logged weighted pushup set, add this entry to
   `data/lifts.json`, with `start` set to that day and to the set's Epley value,
   `weight * (30 + reps) / 40`, rounded to 0.1:
