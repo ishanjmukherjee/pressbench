@@ -1,0 +1,53 @@
+name: Update link preview
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "data/**"
+      - "index.html"
+      - "main.js"
+      - "scripts/preview.cjs"
+      - ".github/workflows/preview.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: preview
+  cancel-in-progress: false
+
+jobs:
+  preview:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install Playwright
+        run: |
+          npm install --no-save --no-package-lock playwright@1.48.2
+          npx playwright install --with-deps chromium
+
+      - name: Screenshot the page
+        run: |
+          python3 -m http.server 8000 &
+          sleep 1
+          node scripts/preview.cjs
+
+      - name: Commit a changed preview
+        run: |
+          if [ -z "$(git status --porcelain -- preview.png)" ]; then
+            echo "The preview is already current."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add preview.png
+          git commit -m "Update link preview"
+          git pull --rebase origin main
+          git push
