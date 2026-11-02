@@ -7,7 +7,8 @@ const URL = process.env.PREVIEW_URL || "http://localhost:8000/";
 (async () => {
   const browser = await chromium.launch();
   const page = await browser.newPage({
-    viewport: { width: 1200, height: 900 },
+    viewport: { width: 700, height: 900 },
+    deviceScaleFactor: 2,
     colorScheme: "dark",
   });
   await page.goto(URL);
