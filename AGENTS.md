@@ -15,8 +15,8 @@ clarification only when they do not cover something.
 - Weight: if none is named, use the last logged weight for that exercise.
 - Exercise: if only a muscle group is named ("triceps, 10 per arm"), use the
   exercise most recently logged for that group.
-- Weights the user names for dumbbell lifts are plates per hand. The dumbbell
-  bar weighs 5 lb, so the real weight is plates + 5.
+- Dumbbell weights are reported as the total weight of one dumbbell, bar
+  included. Use them as given; never add the bar.
 - For pushups the user reports the bag weight. The pushup weight is the total,
   bag plus the latest bodyweight in `data/bodyweight.json`. When the user
   reports a new bodyweight, update that file with the value and the workout
@@ -58,7 +58,7 @@ tab `Workout Log`. Append one row per set through the Google Sheets connector:
 | Exercise | sheet name from the table above | `Bicep curls` |
 | Sets | always `1` | `1` |
 | Reps | per arm, or both arms when they differ | `12 reps each arm`, `22 reps right / 25 reps left` |
-| Notes | time, weight as reported (plates, or bag plus bodyweight for pushups) and whether it was defaulted, to failure | `~10:18 PM CT; 25 lb (last logged weight); to failure` |
+| Notes | time, weight as reported (bag plus bodyweight for pushups) and whether it was defaulted, to failure | `~10:18 PM CT; 25 lb (last logged weight); to failure` |
 | Set debt balance | running balance, see below | `17` |
 
 ## Set debt balance
@@ -84,7 +84,7 @@ the first set, done fresh, is the proxy for strength. Append it to
 
 - `date` is the workout day as `YYYY-MM-DD`.
 - `lift` is the lift id from the table above.
-- `weight` is the real weight: plates + 5 for dumbbell lifts, bag plus
+- `weight` is the weight lifted: as reported for dumbbell lifts, bag plus
   bodyweight for pushups. For a decline pushup set, multiply the total by
   0.70 / 0.64 and round to 0.1, which converts it to its flat equivalent.
 - `reps` is the weaker arm's reps.
