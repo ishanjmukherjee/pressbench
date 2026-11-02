@@ -17,7 +17,10 @@ clarification only when they do not cover something.
   exercise most recently logged for that group.
 - Weights the user names for dumbbell lifts are plates per hand. The dumbbell
   bar weighs 5 lb, so the real weight is plates + 5.
-- Push-up weights are reported as one total, body plus bag. Use it as given.
+- For pushups the user reports the bag weight. The pushup weight is the total,
+  bag plus the latest bodyweight in `data/bodyweight.json`. When the user
+  reports a new bodyweight, update that file with the value and the workout
+  day, and commit it with the set.
 - If the arms differ ("22 right / 25 left"), the weaker arm's reps count for the
   plot.
 - If the user corrects an earlier set ("sorry, that was 22.5"), fix that sheet
@@ -55,7 +58,7 @@ tab `Workout Log`. Append one row per set through the Google Sheets connector:
 | Exercise | sheet name from the table above | `Bicep curls` |
 | Sets | always `1` | `1` |
 | Reps | per arm, or both arms when they differ | `12 reps each arm`, `22 reps right / 25 reps left` |
-| Notes | time, weight as reported (plates) and whether it was defaulted, to failure | `~10:18 PM CT; 25 lb (last logged weight); to failure` |
+| Notes | time, weight as reported (plates, or bag plus bodyweight for pushups) and whether it was defaulted, to failure | `~10:18 PM CT; 25 lb (last logged weight); to failure` |
 | Set debt balance | running balance, see below | `17` |
 
 ## Set debt balance
@@ -81,32 +84,13 @@ the first set, done fresh, is the proxy for strength. Append it to
 
 - `date` is the workout day as `YYYY-MM-DD`.
 - `lift` is the lift id from the table above.
-- `weight` is the real weight: plates + 5 for dumbbell lifts, the reported total
-  for pushups. For a decline pushup set, multiply the total by 0.70 / 0.64 and
-  round to 0.1, which converts it to its flat equivalent.
+- `weight` is the real weight: plates + 5 for dumbbell lifts, bag plus
+  bodyweight for pushups. For a decline pushup set, multiply the total by
+  0.70 / 0.64 and round to 0.1, which converts it to its flat equivalent.
 - `reps` is the weaker arm's reps.
 
-Commit only `data/sets.csv` with a subject like `Log bicep curls 30 x 12` and
-push to `main`.
-
-## Lifts without a plot yet
-
-`data/lifts.json` defines the plotted lifts. Pushups are not in it yet:
-
-- Pushups: on the first logged weighted pushup set, add this entry to
-  `data/lifts.json`, with `start` set to that day and to the set's Epley value,
-  `weight * (30 + reps) / 40`, rounded to 0.1:
-
-  ```json
-  {
-    "id": "pushups",
-    "name": "Pushups",
-    "unit": "lb",
-    "reps": 10,
-    "start": { "date": "YYYY-MM-DD", "value": 0 },
-    "target": { "date": "2027-05-01", "value": 225 }
-  }
-  ```
+Commit `data/sets.csv`, plus `data/bodyweight.json` if it changed, with a
+subject like `Log bicep curls 30 x 12`, and push to `main`.
 
 # User preferences
 
