@@ -45,19 +45,21 @@ function niceStep(span, count) {
   return 10 * mag;
 }
 
-// Starting from the default spacing, step down through finer nice steps
-// (5, 2.5, 2, 1 times a power of ten) until a gridline lands on the target.
+// Of the nice steps (5, 2.5, 2, 1 times a power of ten) that put a gridline
+// exactly on the target, use the one closest to the default spacing.
 function gridStep(span, target) {
   const base = niceStep(span, 4);
-  for (let e = Math.ceil(Math.log10(base)); e >= -3; e--) {
+  let best = null;
+  for (let e = Math.ceil(Math.log10(base)) + 1; e >= -3; e--) {
     for (const f of [5, 2.5, 2, 1]) {
       const step = f * Math.pow(10, e);
-      if (step > base * (1 + 1e-9)) continue;
       const k = target / step;
-      if (Math.abs(k - Math.round(k)) < 1e-9) return step;
+      if (Math.abs(k - Math.round(k)) > 1e-9) continue;
+      const dist = Math.abs(Math.log(step / base));
+      if (!best || dist < best.dist) best = { step, dist };
     }
   }
-  return base;
+  return best ? best.step : base;
 }
 
 const overlaps = (a, b) => a.x0 < b.x1 && b.x0 < a.x1 && a.y0 < b.y1 && b.y0 < a.y1;
@@ -130,7 +132,10 @@ function drawLift(lift, points, domain, box) {
     el("path", { class: "step", d }, svg);
   }
 
-  const series = [{ date: ts, value: lift.start.value, start: true }, ...points];
+  // The start counts as the first point, unless a set was logged on the start
+  // date, in which case that set is the start.
+  const loggedOnStart = points.some(p => p.date.getTime() === ts.getTime());
+  const series = [...(loggedOnStart ? [] : [{ date: ts, value: lift.start.value, start: true }]), ...points];
   const latest = series[series.length - 1];
   const best = series.reduce((a, b) => (b.value >= a.value ? b : a));
 
