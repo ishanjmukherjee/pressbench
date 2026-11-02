@@ -1,5 +1,13 @@
 [
   {
+    "id": "pushups",
+    "name": "Pushups",
+    "unit": "lb",
+    "reps": 10,
+    "start": { "date": "2026-11-02", "value": 176 },
+    "target": { "date": "2027-05-01", "value": 225 }
+  },
+  {
     "id": "bicep-curls",
     "name": "Bicep curls",
     "unit": "lb per arm",
@@ -38,13 +46,5 @@
     "reps": 10,
     "start": { "date": "2026-11-01", "value": 17.5 },
     "target": { "date": "2027-05-01", "value": 27.5 }
-  },
-  {
-    "id": "pushups",
-    "name": "Pushups",
-    "unit": "lb",
-    "reps": 10,
-    "start": { "date": "2026-11-02", "value": 176 },
-    "target": { "date": "2027-05-01", "value": 225 }
   }
 ]
