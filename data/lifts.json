@@ -38,13 +38,5 @@
     "reps": 10,
     "start": { "date": "2026-11-01", "value": 21.9 },
     "target": { "date": "2027-05-01", "value": 27.5 }
-  },
-  {
-    "id": "pushups",
-    "name": "Pushups",
-    "unit": "lb",
-    "reps": 10,
-    "start": { "date": "2026-11-02", "value": 176 },
-    "target": { "date": "2027-05-01", "value": 225 }
   }
 ]
