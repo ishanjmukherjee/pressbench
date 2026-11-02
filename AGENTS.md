@@ -89,8 +89,10 @@ the first set, done fresh, is the proxy for strength. Append it to
   0.70 / 0.64 and round to 0.1, which converts it to its flat equivalent.
 - `reps` is the weaker arm's reps.
 
-Commit `data/sets.csv`, plus `data/bodyweight.json` if it changed, with a
-subject like `Log bicep curls 30 x 12`, and push to `main`.
+Run `git pull --rebase origin main` before committing, since a workflow commits
+`preview.png` after each push. Commit `data/sets.csv`, plus
+`data/bodyweight.json` if it changed, with a subject like
+`Log bicep curls 30 x 12`, and push to `main`.
 
 # User preferences
 
