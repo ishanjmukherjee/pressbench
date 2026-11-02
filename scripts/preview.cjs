@@ -1,4 +1,4 @@
-// screenshots the page header and the first two charts into preview.png,
+// Screenshots the page header and the first two charts into preview.png,
 // the image link previews show. Expects the site served at PREVIEW_URL.
 const { chromium } = require("playwright");
 
