@@ -84,7 +84,7 @@ function drawLift(lift, points, domain, box) {
   const x = d => M.left + (d - t0) / (t1 - t0) * (W - M.left - M.right);
 
   const ts = parseDate(lift.start.date), tt = parseDate(lift.target.date);
-  const values = [lift.start.value, lift.target.value, ...points.map(p => p.value), ...points.map(p => p.weight)];
+  const values = [lift.start.value, lift.target.value, ...points.map(p => p.value)];
   const lo = Math.min(...values), hi = Math.max(...values);
   const pad = (hi - lo) * 0.08 || 1;
   // The range snaps outward to whole gridlines, so it starts and ends on one.
@@ -123,15 +123,6 @@ function drawLift(lift, points, domain, box) {
     el("line", { class: "today", x1: x(today), x2: x(today), y1: y(v) - 5, y2: y(v) + 5 }, svg);
   }
 
-  // The actual weight lifted, as a step line with a number at each change.
-  if (points.length) {
-    let d = `M${x(points[0].date)},${y(points[0].weight)}`;
-    for (let i = 1; i < points.length; i++) {
-      d += `H${x(points[i].date)}V${y(points[i].weight)}`;
-    }
-    el("path", { class: "step", d }, svg);
-  }
-
   // The start counts as the first point, unless a set was logged on the start
   // date, in which case that set is the start.
   const loggedOnStart = points.some(p => p.date.getTime() === ts.getTime());
@@ -164,18 +155,6 @@ function drawLift(lift, points, domain, box) {
   };
   if (best !== latest) label(best, "value");
   label(latest, "value latest");
-
-  let prev = null;
-  for (const p of points) {
-    if (p.weight === prev) continue;
-    prev = p.weight;
-    const sx = x(p.date), sy = y(p.weight), t = fmt(p.weight);
-    placeText(svg, boxes, t, "step-label", [
-      { x: sx + 3, y: sy + 2 },
-      { x: sx + 3, y: sy - 14 },
-      { x: sx - 3 - t.length * 6, y: sy + 2 },
-    ], 6, 12, bounds);
-  }
 }
 
 function drawAxis(box, domain) {
@@ -214,8 +193,7 @@ async function main() {
     const sets = parseCsv(csv);
     const rows = lifts.map(lift => {
       const points = sets.filter(s => s.lift === lift.id).map(s => {
-        const weight = Number(s.weight), reps = Number(s.reps);
-        return { date: parseDate(s.date), weight, reps, value: impliedLoad(weight, reps, lift.reps) };
+        return { date: parseDate(s.date), value: impliedLoad(Number(s.weight), Number(s.reps), lift.reps) };
       }).sort((a, b) => a.date - b.date);
       const row = makeRow(stack);
       const h2 = row.querySelector("h2");
