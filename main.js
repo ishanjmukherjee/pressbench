@@ -135,7 +135,6 @@ function drawLift(lift, points, domain, box) {
     boxes.push({ x0: cx - 4, x1: cx + 4, y0: cy - 4, y1: cy + 4 });
   }
 
-  el("circle", { class: "start" + (latest.start ? " latest" : ""), cx: x(ts), cy: y(lift.start.value), r: 3 }, svg);
   for (const p of points) {
     const cx = x(p.date), cy = y(p.value);
     el("circle", { class: "dot" + (p === latest ? " latest" : ""), cx, cy, r: p === latest ? 3.5 : 2.5 }, svg);
