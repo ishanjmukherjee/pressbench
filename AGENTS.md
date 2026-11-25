@@ -50,7 +50,7 @@ logged.
 ## Sheet row
 
 Sheet: https://docs.google.com/spreadsheets/d/1vbwOJGCh1Xv6aR7FNua1aPG77t7kODYGgVRWAD7KpI8,
-tab `Workout Log`. Append one row per set through the Google Sheets connector:
+tab `Workout Log`. Append one row per set through the Google Sheets connector (if available) or `gws` (`gws sheets spreadsheets values get` / `append` / `update`):
 
 | Column | Content | Example |
 | --- | --- | --- |
