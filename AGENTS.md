@@ -17,10 +17,10 @@ clarification only when they do not cover something.
   exercise most recently logged for that group.
 - Dumbbell weights are reported as the total weight of one dumbbell, bar
   included. Use them as given; never add the bar.
-- For pushups the user reports the bag weight. The pushup weight is the total,
-  bag plus the latest bodyweight in `data/bodyweight.json`. When the user
-  reports a new bodyweight, update that file with the value and the workout
-  day, and commit it with the set.
+- For pushups the user reports the bag weight. The total load is the bag plus
+  the latest bodyweight in `data/bodyweight.json`. When the user reports a new
+  bodyweight, add an entry with the value and the workout day to that file, and
+  commit it with the set.
 - If the arms differ ("22 right / 25 left"), the weaker arm's reps count for the
   plot.
 - If the user corrects an earlier set ("sorry, that was 22.5"), fix that sheet
@@ -80,14 +80,16 @@ for the day.
 
 Only the first set of each lift on each workout day goes on the plot, because
 the first set, done fresh, is the proxy for strength. Append it to
-`data/sets.csv` as `date,lift,weight,reps`:
+`data/sets.csv` as `date,lift,weight,reps,decline`. The CSV holds the raw
+numbers; the site adds bodyweight and converts decline pushups to their flat
+equivalent.
 
 - `date` is the workout day as `YYYY-MM-DD`.
 - `lift` is the lift id from the table above.
-- `weight` is the weight lifted: as reported for dumbbell lifts, bag plus
-  bodyweight for pushups. For a decline pushup set, multiply the total by
-  0.70 / 0.64 and round to 0.1, which converts it to its flat equivalent.
+- `weight` is the weight as reported: per dumbbell for dumbbell lifts, the bag
+  weight for pushups.
 - `reps` is the weaker arm's reps.
+- `decline` is `true` or `false` for pushups, and empty for other lifts.
 
 Run `git pull --rebase origin main` before committing, since a workflow commits
 `preview.png` after each push. Commit `data/sets.csv`, plus

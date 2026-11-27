@@ -22,6 +22,25 @@ function impliedLoad(weight, reps, targetReps) {
   return weight * (30 + reps) / (30 + targetReps);
 }
 
+// Decline pushups load the hands with about 70% of the total, flat ones 64%.
+const DECLINE_TO_FLAT = 0.70 / 0.64;
+
+// Bodyweight on a date: the latest entry on or before it, else the earliest.
+function bodyweightOn(date, entries) {
+  const sorted = entries.map(e => ({ date: parseDate(e.date), lb: e.lb })).sort((a, b) => a.date - b.date);
+  const before = sorted.filter(e => e.date <= date);
+  return (before.length ? before[before.length - 1] : sorted[0]).lb;
+}
+
+// Load moved in a set. For pushups the CSV holds the bag weight; the load is
+// bag plus bodyweight, converted to its flat equivalent for decline sets.
+function setWeight(s, bodyweights) {
+  const weight = Number(s.weight);
+  if (s.lift !== "pushups") return weight;
+  const total = weight + bodyweightOn(parseDate(s.date), bodyweights);
+  return s.decline === "true" ? total * DECLINE_TO_FLAT : total;
+}
+
 function parseCsv(text) {
   const lines = text.trim().split(/\r?\n/);
   const header = lines.shift().split(",").map(s => s.trim());
@@ -185,14 +204,15 @@ function makeRow(stack, cls) {
 async function main() {
   const stack = document.getElementById("stack");
   try {
-    const [lifts, csv] = await Promise.all([
+    const [lifts, csv, bodyweights] = await Promise.all([
       fetch("data/lifts.json", { cache: "no-cache" }).then(r => r.json()),
       fetch("data/sets.csv", { cache: "no-cache" }).then(r => r.text()),
+      fetch("data/bodyweight.json", { cache: "no-cache" }).then(r => r.json()),
     ]);
     const sets = parseCsv(csv);
     const rows = lifts.map(lift => {
       const points = sets.filter(s => s.lift === lift.id).map(s => {
-        return { date: parseDate(s.date), value: impliedLoad(Number(s.weight), Number(s.reps), lift.reps) };
+        return { date: parseDate(s.date), value: impliedLoad(setWeight(s, bodyweights), Number(s.reps), lift.reps) };
       }).sort((a, b) => a.date - b.date);
       const row = makeRow(stack);
       const h2 = row.querySelector("h2");
